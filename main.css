@@ -1,0 +1,41 @@
+.chart-container {
+    overflow: hidden;
+    width: 800px;
+    height: 600px;
+    position: relative;
+}
+
+.three-wrapper {
+    width: 100%;
+    height: 100%;
+}
+
+.three-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.floorsUI-wrapper {
+    position: absolute;
+    top: 0;
+}
+canvas {
+    cursor: pointer;
+}
+ul {
+    list-style: none;
+    padding: 0;
+    left: 0px;
+}
+
+li {
+    max-width: 100px;
+    padding: 10px;
+    background-color: #e8e8e8;
+    border: 1px solid #bbbbbb;
+    text-align: center;
+    list-style-type: none;
+    color: brown;
+    cursor: pointer;
+}
