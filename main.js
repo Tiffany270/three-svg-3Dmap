@@ -365,17 +365,18 @@ async function main() {
         } else {
             var intersects = raycaster.intersectObjects(scene.children, true);
             if (intersects && intersects[0]) {
+                const curobj = intersects[0];
 
                 if (flag) {
-                    lastobj = intersects[0].object;
+                    lastobj = curobj.object;
                     color = lastobj.material.color.getHex();
                     flag = false;
                 } else {
                     lastobj.material.color.setHex(color);
                 }
-                lastobj = intersects[0].object;
-                color =  intersects[0].object.material.color.getHex();
-                intersects[0].object.material.color.setHex(0xffffff)
+                lastobj = curobj.object;
+                color = curobj.object.material.color.getHex();
+                curobj.object.material.color.setHex(0xffffff)
 
             }
         }
