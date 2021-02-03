@@ -336,10 +336,11 @@ async function main() {
 
     }
     /**
-     * three not provide any click event
-     * use intersects to get what u click's obj
-     * Here I write the function when click then change the color when u click
-     * then u need to store ur last colick
+     * three.js didn't provide any click events
+     * use intersects to get what u click
+     * Here I write the function when happen a click event  
+     * then change the color what u click
+     * ( u need to store ur last click)
      */
     var raycaster = new THREE.Raycaster();
     var mouse = new THREE.Vector2();
@@ -349,7 +350,7 @@ async function main() {
     function onMouseMove(event) {
         /***
          * clientX - > relate to window
-         * if u have inner a div or others, use offsetx/y
+         * if u have innered a div or others, use offsetx/y
          */
 
 
