@@ -104,7 +104,6 @@ async function main() {
     // ------ 
 
     const list = [];
-    let currentList = null;
 
 
     function initSVGObject(svgurl) {
@@ -240,23 +239,24 @@ async function main() {
         bbox.getCenter(group.position).multiplyScalar(- 1);
         return group;
     }
-    {
+    // -----------------------------------------
 
-        const svg1 = await initSVGObject('3F.svg');
-        const group1 = addGeoObject(svg1);
-        group1.scale.set(0.5, 0.5, 1);
-        group1.position.x = group1.position.x + 500;
-        group1.position.y = group1.position.y - 400;
-        group1._id = 1;
-        list.push(group1); // 从下往上数
-        const svg2 = await initSVGObject('2F.svg');
-        const group2 = addGeoObject(svg2);
-        group2._id = 2;
-        list.push(group2);
-        const group3 = await addGeoObject(svg2);
-        group3._id = 3;
-        list.push(group3);
-    }
+
+    const svg1 = await initSVGObject('2F.svg');
+    const group1 = addGeoObject(svg1);
+    // group1.scale.set(0.5, 0.5, 1);
+    // group1.position.x = group1.position.x + 500;
+    // group1.position.y = group1.position.y - 400;
+    group1._id = 1;
+    list.push(group1); // 从下往上数
+    const svg2 = await initSVGObject('2F.svg');
+    const group2 = addGeoObject(svg2);
+    group2._id = 2;
+    list.push(group2);
+    const group3 = await addGeoObject(svg2);
+    group3._id = 3;
+    list.push(group3);
+
 
     let space = 0;
     list.forEach((ele, index) => {
@@ -265,7 +265,7 @@ async function main() {
         ele.position.z = space;
         scene.add(ele);
     });
-
+    // -----------------------------------------
 
     function resizeRendererToDisplaySize(renderer) {
         const canvas = renderer.domElement;
@@ -277,7 +277,7 @@ async function main() {
         }
         return needResize;
     }
-
+    const clock = new THREE.Clock();
     function render() {
 
         if (resizeRendererToDisplaySize(renderer)) {
@@ -286,15 +286,51 @@ async function main() {
             camera.updateProjectionMatrix();
         }
 
-        renderer.render(scene, camera);
+        const delta = clock.getDelta();
+        mixerlist.forEach(mixer => {
+            if (flaga) {
+                mixer.update(delta);
 
+            }
+
+        })
+
+
+        renderer.render(scene, camera);
         requestAnimationFrame(render);
     }
 
     requestAnimationFrame(render);
     var currentFloor = 0;
 
+    // -------------- fade out animation
+    const mixerlist = [];
+    const mixer1 = new THREE.AnimationMixer(group1);
+    const mixer2 = new THREE.AnimationMixer(group2);
+    const mixer3 = new THREE.AnimationMixer(group3);
+    mixerlist.push(mixer1);
+    mixerlist.push(mixer2);
+    mixerlist.push(mixer3);
+    let flaga = true;
+    mixerlist[0].addEventListener('loop', function (e) {
+        // console.log(e);
+    });
+    mixerlist[0].addEventListener('finished', function (e) {
+        flaga = false;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i]._id == currentFloor) {
+                list[i].position.z = 0; // 画面居中
+                scene.add(list[i]);
+            } else {
+                scene.remove(list[i]);
+            }
+        }
+    });
+    // -------------- fade out animation
+
     function selecteFloorByid(id) {
+        flaga = true;
+
         if (id == 'all') {
             space = 0;
             currentFloor = 0;
@@ -307,16 +343,47 @@ async function main() {
             });
         } else {
             currentFloor = id;
-            scene.rotation.x = 0;
+
+            //----- if u don't want to set animation , use below
+            // for (var i = 0; i < list.length; i++) {
+            //     if (list[i]._id == currentFloor) {
+            //         list[i].position.z = 0; // 画面居中
+            //         scene.add(list[i]);
+            //     } else {
+            //         scene.remove(list[i]);
+            //     }
+            // }
+
+            // -------------
+            const getClip = (pos, direction) => {
+                const { x, y, z } = pos;
+                const times = [0, 10];
+                const values = [
+                    x,
+                    y,
+                    z,
+                    x,
+                    y,
+                    direction === 0 ? 0 : z + direction];
+                const posTrack = new THREE.VectorKeyframeTrack('yiki.position', times, values);
+                const duration = 10;
+                return new THREE.AnimationClip('fadeout', duration, [posTrack]);
+            };
+            let dic = 0;
             for (var i = 0; i < list.length; i++) {
                 if (list[i]._id == id) {
-                    list[i].position.z = 0;
-                    scene.add(list[i]);
-                    currentList = list[i]
+                    dic = 0;
                 } else {
-                    scene.remove(list[i]);
+                    dic = i < id ? -500 : 500;
                 }
+                const action = mixerlist[i].clipAction(
+                    getClip(list[i].position, dic));
+                action.timeScale = 2;
+                // action.loop = THREE.LoopOnce;
+                action.play();
             }
+            // ----------------------------------
+
         }
     }
 
@@ -385,6 +452,7 @@ async function main() {
 
     }
     canvas.addEventListener('click', onMouseMove)
+
 
 }
 
