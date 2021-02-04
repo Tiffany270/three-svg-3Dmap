@@ -155,7 +155,6 @@ async function main() {
         context.fillStyle = fontColor;
         context.fillText(message, borderThickness, fontsize + borderThickness);
         const texture = new THREE.Texture(canvas);
-        texture.needsUpdate = true;
         const spriteMaterial = new THREE.SpriteMaterial(
             {
                 map: texture,
@@ -170,13 +169,11 @@ async function main() {
     ) {
         const paths = svgObject.paths;
         const group = new THREE.Group();
-
-
         const simpleShapes = paths[0].toShapes(true, true);
         for (let j = 0; j < simpleShapes.length; j++) {
             const material = new THREE.MeshLambertMaterial({
                 color: new THREE.Color('#a6a6a4'),
-                transparent: true
+                transparent: true,
             });
             const simpleShape = simpleShapes[j];
             const shape3d = new THREE.ExtrudeGeometry(simpleShape, {
@@ -191,6 +188,7 @@ async function main() {
             const mesh = new THREE.Mesh(shape3d, material);
             mesh.rotation.x = Math.PI;
             mesh.position.set(0, 0, -21);
+            mesh.name = 'floorboard'
 
             group.add(mesh);
         }
@@ -256,8 +254,9 @@ async function main() {
     const group3 = await addGeoObject(svg2);
     group3._id = 3;
     list.push(group3);
-
-
+    const group4 = await addGeoObject(svg2);
+    group4._id = 4;
+    list.push(group4);
     let space = 0;
     list.forEach((ele, index) => {
         ele._floorid = index;
@@ -277,72 +276,213 @@ async function main() {
         }
         return needResize;
     }
-    const clock = new THREE.Clock();
-    function render() {
+    //-------------------gradient
 
+
+
+
+    // ----------------------------
+    opacity = 1;
+    function render() {
+        TWEEN.update();
         if (resizeRendererToDisplaySize(renderer)) {
             const canvas = renderer.domElement;
             camera.aspect = canvas.clientWidth / canvas.clientHeight;
             camera.updateProjectionMatrix();
         }
 
-        const delta = clock.getDelta();
-        mixerlist.forEach(mixer => {
-            if (flaga) {
-                mixer.update(delta);
-
-            }
-
-        })
-
 
         renderer.render(scene, camera);
         requestAnimationFrame(render);
+
+
+        // const delta = clock.getDelta();
+        // mixerlist.forEach(mixer => {
+        //     if (flaga) {
+        //         console.log(flaga);
+        //         mixer.update(delta);
+        //     }
+        // })
+
     }
 
     requestAnimationFrame(render);
     var currentFloor = 0;
 
     // -------------- fade out animation
-    const mixerlist = [];
-    const mixer1 = new THREE.AnimationMixer(group1);
-    const mixer2 = new THREE.AnimationMixer(group2);
-    const mixer3 = new THREE.AnimationMixer(group3);
-    mixerlist.push(mixer1);
-    mixerlist.push(mixer2);
-    mixerlist.push(mixer3);
-    let flaga = true;
-    mixerlist[0].addEventListener('loop', function (e) {
-        // console.log(e);
-    });
-    mixerlist[0].addEventListener('finished', function (e) {
-        flaga = false;
-        for (var i = 0; i < list.length; i++) {
-            if (list[i]._id == currentFloor) {
-                list[i].position.z = 0; // 画面居中
-                scene.add(list[i]);
-            } else {
-                scene.remove(list[i]);
-            }
-        }
-    });
-    // -------------- fade out animation
+    // const mixerlist = [];
+    // const mixer1 = new THREE.AnimationMixer(group1);
+    // const mixer2 = new THREE.AnimationMixer(group2);
+    // const mixer3 = new THREE.AnimationMixer(group3);
+    // mixerlist.push(mixer1);
+    // mixerlist.push(mixer2);
+    // mixerlist.push(mixer3);
+    // mixerlist[0].addEventListener('loop', function (e) {
+    //     // console.log(e);
+    // });
+    // mixerlist[0].addEventListener('finished', function (e) {
+    //     flaga = false;
+    //     for (var i = 0; i < list.length; i++) {
+    //         if (list[i]._id == currentFloor) {
+    //             list[i].position.z = 0; // 画面居中
+    //             scene.add(list[i]);
+    //         } else {
+    //             scene.remove(list[i]);
+    //         }
+    //     }
+    // });
 
+
+    // -------------- animation ---------------------------------
+    /**  animation case1 ( origin THREE.animationClip)
+     * 
+     * using  const action = mixerlist[i].clipAction(
+                    getClip(list[i].position, dic));
+                action.timeScale = 2;
+                action.loop = THREE.LoopOnce;
+                action.play();
+     * 
+    */
+    // const getClip = (pos, direction) => {
+    //     const { x, y, z } = pos;
+    //     const times = [0, 2];
+    //     const values = [
+    //         x,
+    //         y,
+    //         z,
+    //         x,
+    //         y,
+    //         direction === 0 ? 0 : z + direction];
+    //     const posTrack = new THREE.VectorKeyframeTrack('yiki.position', times, values);
+    //     const duration = 2;
+    //     return new THREE.AnimationClip('fadeout', duration, [posTrack]);
+    // };
+    // -------------- animation origin end ---------------------------------
+
+    /**using TWEEN.JS */
+    const teweenlistup = [];
+    const teweenlistdown = [];
+    const teweenlistcenter = [];
+    list.forEach((floor, index) => {
+        var position = list[index].position;
+        var target_up = { z: 1200 };
+        var target_down = { z: -1200 };
+        var target_center = { z: 0 };
+        var tween_up = new TWEEN.Tween(position).to(target_up, 2000);
+        var tween_down = new TWEEN.Tween(position).to(target_down, 2000);
+        var tween_center = new TWEEN.Tween(position).to(target_center, 2000);
+        tween_up.easing(TWEEN.Easing.Cubic.InOut);
+        tween_down.easing(TWEEN.Easing.Cubic.InOut);
+        tween_center.easing(TWEEN.Easing.Cubic.InOut);
+        const handle = () => {
+            list[index].position.z += 10;
+            const root = list[index].children;
+            root.forEach((x) => {
+                x.material.opacity -= 0.01;
+            })
+        }
+        tween_up.onUpdate(handle);
+        tween_down.onUpdate(handle);
+        tween_center.onUpdate(() => {
+            list[index].position.z += 10;
+        });
+        teweenlistup.push(tween_up);
+        teweenlistdown.push(tween_down);
+        teweenlistcenter.push(tween_center);
+
+    })
+    const back_teweenlistup = [];
+    const back_teweenlistdown = [];
+    const back_teweenlistcenter = [];
+    let space_fixed_z = 0;
+    list.forEach((floor, index) => {
+        space_fixed_z += 100;
+        var target = { z: space_fixed_z };
+        var position = list[index].position;
+        var tween_up = new TWEEN.Tween(position).to(target, 2000);
+        var tween_down = new TWEEN.Tween(position).to(target, 2000);
+        var tween_center = new TWEEN.Tween(position).to(target, 2000);
+        tween_up.easing(TWEEN.Easing.Cubic.InOut);
+        tween_down.easing(TWEEN.Easing.Cubic.InOut);
+        tween_center.easing(TWEEN.Easing.Cubic.InOut);
+        const handle = () => {
+            list[index].position.z += 10;
+            const root = list[index].children;
+            root.forEach((x) => {
+                x.material.opacity += 0.01;
+            })
+        }
+        tween_up.onUpdate(handle);
+        tween_down.onUpdate(handle);
+        tween_center.onUpdate(() => {
+            list[index].position.z += 10;
+
+        });
+        back_teweenlistup.push(tween_up);
+        back_teweenlistdown.push(tween_down);
+        back_teweenlistcenter.push(tween_center);
+
+    })
+    const next_centerlist = [];
+    list.forEach((floor, index) => {
+        var position = list[index].position;
+        var target = { z: 0 };
+        var tween_center = new TWEEN.Tween(position).to(target, 2000);
+        tween_center.easing(TWEEN.Easing.Cubic.InOut);
+        tween_center.onUpdate(() => {
+            const root = list[index].children;
+            list[index].position.z += 10;
+            root.forEach((x) => {
+                x.material.opacity += 0.01;
+            })
+        });
+        next_centerlist.push(tween_center);
+
+    })
+
+
+    // --------------------------------------------
+
+
+    selecte_flag = false;
     function selecteFloorByid(id) {
-        flaga = true;
 
         if (id == 'all') {
             space = 0;
-            currentFloor = 0;
             scene.rotation.x = 5.3;
-            list.forEach((ele, index) => {
-                ele._floorid = index;
-                space += 100;
-                ele.position.z = space;
-                scene.add(ele);
-            });
+            // list.forEach((ele, index) => {
+            //     ele._floorid = index;
+            //     space += 100;
+            //     ele.position.z = space;
+            //     const root = ele.children;
+            //     root.forEach((x) => {
+            //         x.material.opacity = 1;
+            //     })
+            //     scene.add(ele);
+            // });
+            for (var i = 0; i < list.length; i++) {
+                if (list[i]._id === currentFloor) {
+                    back_teweenlistcenter[i].start();
+                } else if (list[i]._id > currentFloor) {
+                    back_teweenlistup[i].start();
+                } else {
+                    back_teweenlistdown[i].start();
+                }
+            }
+            currentFloor = 0;
+
         } else {
-            currentFloor = id;
+            id = parseInt(id);
+            currentFloor = parseInt(id);
+            for (var i = 0; i < list.length; i++) {
+                if (list[i]._id === id) {
+                    teweenlistcenter[i].start();
+                } else if (list[i]._id > id) {
+                    teweenlistup[i].start();
+                } else {
+                    teweenlistdown[i].start();
+                }
+            }
 
             //----- if u don't want to set animation , use below
             // for (var i = 0; i < list.length; i++) {
@@ -354,38 +494,13 @@ async function main() {
             //     }
             // }
 
-            // -------------
-            const getClip = (pos, direction) => {
-                const { x, y, z } = pos;
-                const times = [0, 10];
-                const values = [
-                    x,
-                    y,
-                    z,
-                    x,
-                    y,
-                    direction === 0 ? 0 : z + direction];
-                const posTrack = new THREE.VectorKeyframeTrack('yiki.position', times, values);
-                const duration = 10;
-                return new THREE.AnimationClip('fadeout', duration, [posTrack]);
-            };
-            let dic = 0;
-            for (var i = 0; i < list.length; i++) {
-                if (list[i]._id == id) {
-                    dic = 0;
-                } else {
-                    dic = i < id ? -500 : 500;
-                }
-                const action = mixerlist[i].clipAction(
-                    getClip(list[i].position, dic));
-                action.timeScale = 2;
-                // action.loop = THREE.LoopOnce;
-                action.play();
-            }
             // ----------------------------------
 
         }
+
+        selecte_flag = true;
     }
+
 
     {
 
@@ -395,12 +510,11 @@ async function main() {
             const element = butns[index];
             element.onclick = function (obj) {
                 const id = obj.target.innerHTML;
-                selecteFloorByid(id);
-
+                if (id !== currentFloor) {
+                    selecteFloorByid(id);
+                }
             }
-
         }
-
     }
     /**
      * three.js didn't provide any click events
@@ -414,7 +528,7 @@ async function main() {
     let lastobj = null;
     let color = null;
     let flag = true;
-    function onMouseMove(event) {
+    function onMouseClick(event) {
         /***
          * clientX - > relate to window
          * if u have innered a div or others, use offsetx/y
@@ -434,9 +548,12 @@ async function main() {
             var intersects = raycaster.intersectObjects(scene.children, true);
             if (intersects && intersects[0]) {
                 const curobj = intersects[0];
-
+                if (curobj.object.name === 'floorboard') {
+                    return;
+                }
                 if (flag) {
                     lastobj = curobj.object;
+                    console.log(lastobj);
                     color = lastobj.material.color.getHex();
                     flag = false;
                 } else {
@@ -451,7 +568,41 @@ async function main() {
 
 
     }
-    canvas.addEventListener('click', onMouseMove)
+    let flag2 = true;
+    let lastobj2 = null;
+
+    function onMousemove(event) {
+        if (currentFloor === 0) {
+            mouse.x = (event.offsetX / canvas.offsetWidth) * 2 - 1;
+            mouse.y = - (event.offsetY / canvas.offsetHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            var intersects = raycaster.intersectObjects(scene.children, true);
+            if (intersects && intersects[0]) {
+                const curobj = intersects[0];
+                if (curobj.object.name !== 'floorboard') {
+                    return;
+                } else {
+                    if (flag2) {
+                        lastobj2 = curobj.object;
+                        color = lastobj2.material.color.getHex();
+                        flag2 = false;
+                    } else {
+                        lastobj2.material.color.setHex(color);
+                        lastobj2 = curobj.object;
+                        color = curobj.object.material.color.getHex();
+                        curobj.object.material.color.setHex(0x919ca7)
+                    }
+                }
+            } else {
+                if (lastobj2) {
+                    lastobj2.material.color.setHex(color);
+                }
+
+            }
+        }
+    }
+    canvas.addEventListener('click', onMouseClick)
+    canvas.addEventListener('mousemove', onMousemove)
 
 
 }
