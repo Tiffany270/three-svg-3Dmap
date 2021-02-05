@@ -239,11 +239,11 @@ async function main() {
     // -----------------------------------------
 
     const list = [];
-    const svg1 = await initSVGObject('2F.svg');
+    const svg1 = await initSVGObject('3F.svg');
     const group1 = addGeoObject(svg1);
-    // group1.scale.set(0.5, 0.5, 1);
-    // group1.position.x = group1.position.x + 500;
-    // group1.position.y = group1.position.y - 400;
+    group1.scale.set(0.5, 0.5, 1);
+    group1.position.x = group1.position.x + 500;
+    group1.position.y = group1.position.y - 400;
     group1._id = 1;
     list.push(group1); // 从下往上数
     const svg2 = await initSVGObject('2F.svg');
@@ -358,130 +358,71 @@ async function main() {
     const back_secen_z = new TWEEN.Tween(scene.rotation).to({ z: 0 }, 1000);
     back_secen_z.easing(TWEEN.Easing.Cubic.InOut);
 
-    const teweenlistup = [];
-    const teweenlistdown = [];
-    const teweenlistcenter = [];
-    list.forEach((floor, index) => {
-        var position = list[index].position;
-        var target_up = { z: 1200 };
-        var target_down = { z: -1200 };
-        var target_center = { z: 0 };
-        var tween_up = new TWEEN.Tween(position).to(target_up, 2000);
-        var tween_down = new TWEEN.Tween(position).to(target_down, 2000);
-        var tween_center = new TWEEN.Tween(position).to(target_center, 2000);
-        tween_up.easing(TWEEN.Easing.Cubic.InOut);
-        tween_down.easing(TWEEN.Easing.Cubic.InOut);
-        tween_center.easing(TWEEN.Easing.Cubic.InOut);
-        const handle = () => {
-            const root = list[index].children;
+    const tweenOut = (list, z, direction) => {
+        var position = list.position;
+        var target = { z: z };
+        var tween_obj = new TWEEN.Tween(position).to(target, 2000);
+        tween_obj.easing(TWEEN.Easing.Cubic.InOut);
+        const handle1 = () => {
+            const root = list.children;
             root.forEach((x) => {
-                x.material.opacity -= 0.01;
+                if (x.material.opacity > 0) {
+                    x.material.opacity -= 0.02;
+                }
             })
         }
-        tween_up.onUpdate(handle);
-        tween_down.onUpdate(handle);
-
-        teweenlistup.push(tween_up);
-        teweenlistdown.push(tween_down);
-        teweenlistcenter.push(tween_center);
-
-    })
-    const back_teweenlistup = [];
-    const back_teweenlistdown = [];
-    const back_teweenlistcenter = [];
-    let space_fixed_z = 0;
-    list.forEach((floor, index) => {
-        space_fixed_z += 100;
-        var target = { z: space_fixed_z };
-        var position = list[index].position;
-        var tween_up = new TWEEN.Tween(position).to(target, 2000);
-        var tween_down = new TWEEN.Tween(position).to(target, 2000);
-        var tween_center = new TWEEN.Tween(position).to(target, 2000);
-        tween_up.easing(TWEEN.Easing.Cubic.InOut);
-        tween_down.easing(TWEEN.Easing.Cubic.InOut);
-        tween_center.easing(TWEEN.Easing.Cubic.InOut);
-        const handle = () => {
-            const root = list[index].children;
+        const handle2 = () => {
+            const root = list.children;
             root.forEach((x) => {
-                x.material.opacity += 0.01;
+                if (x.material.opacity < 1) {
+                    x.material.opacity += 0.02;
+                }
             })
         }
-        tween_up.onUpdate(handle);
-        tween_down.onUpdate(handle);
-
-        back_teweenlistup.push(tween_up);
-        back_teweenlistdown.push(tween_down);
-        back_teweenlistcenter.push(tween_center);
-
-    })
-    const next_centerlist = [];
-    list.forEach((floor, index) => {
-        var position = list[index].position;
-        var target = { z: 0 };
-        var tween_center = new TWEEN.Tween(position).to(target, 2000);
-        tween_center.easing(TWEEN.Easing.Cubic.InOut);
-        tween_center.onUpdate(() => {
-            const root = list[index].children;
-            root.forEach((x) => {
-                x.material.opacity += 0.01;
-            })
-        });
-        next_centerlist.push(tween_center);
-
-    })
-
-
+        direction === 1 ? tween_obj.onUpdate(handle1) : tween_obj.onUpdate(handle2);
+        tween_obj.start();
+    }
 
     // ---------------end animation-----------------------------
-
 
     let direction_list = [];// 1->up; 0->center; -1->down
     function selecteFloorByid(id) {
         if (id == 'all') {
             currentFloor = -1;
             back_secen_z.start();
+            let space_fixed_z = 0;
             for (var i = 0; i < list.length; i++) {
-                if (direction_list[i] === 0) {
-                    back_teweenlistcenter[i].start();
-                } else if (direction_list[i] === 1) {
-                    back_teweenlistup[i].start();
-                } else {
-                    back_teweenlistdown[i].start();
-                }
+                space_fixed_z += 100;
+                tweenOut(list[i], space_fixed_z, 2);
             }
+
         } else {
             id = parseInt(id);
             if (currentFloor !== -1) {
                 const lastcurrent_index = list.findIndex((x) => x._id === currentFloor);
                 const current_index = list.findIndex((x) => x._id === id);
-                direction_list[current_index] = 0;
-                next_centerlist[current_index].start();
-                if (lastcurrent_index > id) {
-                    direction_list[lastcurrent_index] = 1;
-                    teweenlistup[lastcurrent_index].start();
+                tweenOut(list[current_index], 0, 2);
+                if (lastcurrent_index > current_index) {
+                    tweenOut(list[lastcurrent_index], 1200, 1);
                 } else {
-                    direction_list[lastcurrent_index] = -1;
-                    teweenlistdown[lastcurrent_index].start();
+                    tweenOut(list[lastcurrent_index], -1200, 1);
                 }
             } else {
                 secen_z.start();
                 for (var i = 0; i < list.length; i++) {
                     if (list[i]._id === id) {
                         direction_list[i] = 0;
-                        teweenlistcenter[i].start();
+                        tweenOut(list[i], 0, 2);
                     } else if (list[i]._id > id) {
                         direction_list[i] = 1;
-                        teweenlistup[i].start();
+                        tweenOut(list[i], 1200, 1);
                     } else {
                         direction_list[i] = -1;
-                        teweenlistdown[i].start();
+                        tweenOut(list[i], -1200, 1);
                     }
                 }
-
             }
             currentFloor = id;
-
-
             //----- if u don't want to set animation , use below
             // for (var i = 0; i < list.length; i++) {
             //     if (list[i]._id == currentFloor) {
