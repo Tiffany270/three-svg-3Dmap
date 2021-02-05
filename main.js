@@ -239,11 +239,11 @@ async function main() {
     // -----------------------------------------
 
     const list = [];
-    const svg1 = await initSVGObject('3F.svg');
+    const svg1 = await initSVGObject('2F.svg');
     const group1 = addGeoObject(svg1);
-    group1.scale.set(0.5, 0.5, 1);
-    group1.position.x = group1.position.x + 500;
-    group1.position.y = group1.position.y - 400;
+    // group1.scale.set(0.5, 0.5, 1);
+    // group1.position.x = group1.position.x + 500;
+    // group1.position.y = group1.position.y - 400;
     group1._id = 1;
     list.push(group1); // 从下往上数
     const svg2 = await initSVGObject('2F.svg');
