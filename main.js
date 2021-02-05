@@ -88,6 +88,7 @@ async function main() {
 
     // ------ 
     const scene = new THREE.Scene();
+    scene.rotation.x = 5.3;
     const textureLoader = new THREE.TextureLoader();
     const decalDiffuse = textureLoader.load('threebg.jpg', () => {
         scene.background = decalDiffuse;
@@ -102,8 +103,6 @@ async function main() {
     light.position.set(0.75, 0.75, 1.0).normalize();
     scene.add(light);
     // ------ 
-
-    const list = [];
 
 
     function initSVGObject(svgurl) {
@@ -239,7 +238,7 @@ async function main() {
     }
     // -----------------------------------------
 
-
+    const list = [];
     const svg1 = await initSVGObject('2F.svg');
     const group1 = addGeoObject(svg1);
     // group1.scale.set(0.5, 0.5, 1);
@@ -282,7 +281,6 @@ async function main() {
 
 
     // ----------------------------
-    opacity = 1;
     function render() {
         TWEEN.update();
         if (resizeRendererToDisplaySize(renderer)) {
@@ -305,11 +303,9 @@ async function main() {
         // })
 
     }
-
     requestAnimationFrame(render);
-    var currentFloor = 0;
-
-    // -------------- fade out animation
+    var currentFloor = -1;
+    // -------------- AnimationMixer  animation
     // const mixerlist = [];
     // const mixer1 = new THREE.AnimationMixer(group1);
     // const mixer2 = new THREE.AnimationMixer(group2);
@@ -332,16 +328,13 @@ async function main() {
     //     }
     // });
 
-
     // -------------- animation ---------------------------------
     /**  animation case1 ( origin THREE.animationClip)
-     * 
-     * using  const action = mixerlist[i].clipAction(
+     using  const action = mixerlist[i].clipAction(
                     getClip(list[i].position, dic));
                 action.timeScale = 2;
                 action.loop = THREE.LoopOnce;
                 action.play();
-     * 
     */
     // const getClip = (pos, direction) => {
     //     const { x, y, z } = pos;
@@ -360,6 +353,11 @@ async function main() {
     // -------------- animation origin end ---------------------------------
 
     /**using TWEEN.JS */
+    const secen_z = new TWEEN.Tween(scene.rotation).to({ z: -0.15 }, 1000);
+    secen_z.easing(TWEEN.Easing.Cubic.InOut);
+    const back_secen_z = new TWEEN.Tween(scene.rotation).to({ z: 0 }, 1000);
+    back_secen_z.easing(TWEEN.Easing.Cubic.InOut);
+
     const teweenlistup = [];
     const teweenlistdown = [];
     const teweenlistcenter = [];
@@ -375,7 +373,6 @@ async function main() {
         tween_down.easing(TWEEN.Easing.Cubic.InOut);
         tween_center.easing(TWEEN.Easing.Cubic.InOut);
         const handle = () => {
-            list[index].position.z += 10;
             const root = list[index].children;
             root.forEach((x) => {
                 x.material.opacity -= 0.01;
@@ -383,9 +380,7 @@ async function main() {
         }
         tween_up.onUpdate(handle);
         tween_down.onUpdate(handle);
-        tween_center.onUpdate(() => {
-            list[index].position.z += 10;
-        });
+
         teweenlistup.push(tween_up);
         teweenlistdown.push(tween_down);
         teweenlistcenter.push(tween_center);
@@ -406,7 +401,6 @@ async function main() {
         tween_down.easing(TWEEN.Easing.Cubic.InOut);
         tween_center.easing(TWEEN.Easing.Cubic.InOut);
         const handle = () => {
-            list[index].position.z += 10;
             const root = list[index].children;
             root.forEach((x) => {
                 x.material.opacity += 0.01;
@@ -414,10 +408,7 @@ async function main() {
         }
         tween_up.onUpdate(handle);
         tween_down.onUpdate(handle);
-        tween_center.onUpdate(() => {
-            list[index].position.z += 10;
 
-        });
         back_teweenlistup.push(tween_up);
         back_teweenlistdown.push(tween_down);
         back_teweenlistcenter.push(tween_center);
@@ -431,7 +422,6 @@ async function main() {
         tween_center.easing(TWEEN.Easing.Cubic.InOut);
         tween_center.onUpdate(() => {
             const root = list[index].children;
-            list[index].position.z += 10;
             root.forEach((x) => {
                 x.material.opacity += 0.01;
             })
@@ -441,48 +431,56 @@ async function main() {
     })
 
 
-    // --------------------------------------------
+
+    // ---------------end animation-----------------------------
 
 
-    selecte_flag = false;
+    let direction_list = [];// 1->up; 0->center; -1->down
     function selecteFloorByid(id) {
-
         if (id == 'all') {
-            space = 0;
-            scene.rotation.x = 5.3;
-            // list.forEach((ele, index) => {
-            //     ele._floorid = index;
-            //     space += 100;
-            //     ele.position.z = space;
-            //     const root = ele.children;
-            //     root.forEach((x) => {
-            //         x.material.opacity = 1;
-            //     })
-            //     scene.add(ele);
-            // });
+            currentFloor = -1;
+            back_secen_z.start();
             for (var i = 0; i < list.length; i++) {
-                if (list[i]._id === currentFloor) {
+                if (direction_list[i] === 0) {
                     back_teweenlistcenter[i].start();
-                } else if (list[i]._id > currentFloor) {
+                } else if (direction_list[i] === 1) {
                     back_teweenlistup[i].start();
                 } else {
                     back_teweenlistdown[i].start();
                 }
             }
-            currentFloor = 0;
-
         } else {
             id = parseInt(id);
-            currentFloor = parseInt(id);
-            for (var i = 0; i < list.length; i++) {
-                if (list[i]._id === id) {
-                    teweenlistcenter[i].start();
-                } else if (list[i]._id > id) {
-                    teweenlistup[i].start();
+            if (currentFloor !== -1) {
+                const lastcurrent_index = list.findIndex((x) => x._id === currentFloor);
+                const current_index = list.findIndex((x) => x._id === id);
+                direction_list[current_index] = 0;
+                next_centerlist[current_index].start();
+                if (lastcurrent_index > id) {
+                    direction_list[lastcurrent_index] = 1;
+                    teweenlistup[lastcurrent_index].start();
                 } else {
-                    teweenlistdown[i].start();
+                    direction_list[lastcurrent_index] = -1;
+                    teweenlistdown[lastcurrent_index].start();
                 }
+            } else {
+                secen_z.start();
+                for (var i = 0; i < list.length; i++) {
+                    if (list[i]._id === id) {
+                        direction_list[i] = 0;
+                        teweenlistcenter[i].start();
+                    } else if (list[i]._id > id) {
+                        direction_list[i] = 1;
+                        teweenlistup[i].start();
+                    } else {
+                        direction_list[i] = -1;
+                        teweenlistdown[i].start();
+                    }
+                }
+
             }
+            currentFloor = id;
+
 
             //----- if u don't want to set animation , use below
             // for (var i = 0; i < list.length; i++) {
@@ -493,15 +491,9 @@ async function main() {
             //         scene.remove(list[i]);
             //     }
             // }
-
             // ----------------------------------
-
         }
-
-        selecte_flag = true;
     }
-
-
     {
 
         const ul = document.getElementById('ul');
@@ -510,7 +502,7 @@ async function main() {
             const element = butns[index];
             element.onclick = function (obj) {
                 const id = obj.target.innerHTML;
-                if (id !== currentFloor) {
+                if (parseInt(id) !== currentFloor) {
                     selecteFloorByid(id);
                 }
             }
@@ -533,12 +525,10 @@ async function main() {
          * clientX - > relate to window
          * if u have innered a div or others, use offsetx/y
          */
-
-
         mouse.x = (event.offsetX / canvas.offsetWidth) * 2 - 1;
         mouse.y = - (event.offsetY / canvas.offsetHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
-        if (currentFloor === 0) {
+        if (currentFloor === -1) {
             var intersects = raycaster.intersectObjects(list, true);
             if (intersects && intersects[0]) {
                 const id = intersects[0].object.parent._id;
@@ -572,7 +562,7 @@ async function main() {
     let lastobj2 = null;
 
     function onMousemove(event) {
-        if (currentFloor === 0) {
+        if (currentFloor === -1) {
             mouse.x = (event.offsetX / canvas.offsetWidth) * 2 - 1;
             mouse.y = - (event.offsetY / canvas.offsetHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
