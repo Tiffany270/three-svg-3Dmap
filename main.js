@@ -458,6 +458,7 @@ async function main() {
      */
     var raycaster = new THREE.Raycaster();
     var mouse = new THREE.Vector2();
+
     let lastobj = null;
     let color = null;
     let flag = true;
@@ -482,18 +483,7 @@ async function main() {
                 if (curobj.object.name === 'floorboard') {
                     return;
                 }
-                if (flag) {
-                    lastobj = curobj.object;
-                    console.log(lastobj);
-                    color = lastobj.material.color.getHex();
-                    flag = false;
-                } else {
-                    lastobj.material.color.setHex(color);
-                }
-                lastobj = curobj.object;
-                color = curobj.object.material.color.getHex();
-                curobj.object.material.color.setHex(0xffffff)
-
+                resetLast_Click(curobj);
             }
         }
 
@@ -501,7 +491,7 @@ async function main() {
     }
     let flag2 = true;
     let lastobj2 = null;
-
+    let color2 = null;
     function onMousemove(event) {
         if (currentFloor === -1) {
             mouse.x = (event.offsetX / canvas.offsetWidth) * 2 - 1;
@@ -513,20 +503,11 @@ async function main() {
                 if (curobj.object.name !== 'floorboard') {
                     return;
                 } else {
-                    if (flag2) {
-                        lastobj2 = curobj.object;
-                        color = lastobj2.material.color.getHex();
-                        flag2 = false;
-                    } else {
-                        lastobj2.material.color.setHex(color);
-                        lastobj2 = curobj.object;
-                        color = curobj.object.material.color.getHex();
-                        curobj.object.material.color.setHex(0x919ca7)
-                    }
+                    resetLast_Move(curobj);
                 }
             } else {
                 if (lastobj2) {
-                    lastobj2.material.color.setHex(color);
+                    lastobj2.material.color.setHex(color2);
                 }
 
             }
@@ -534,7 +515,30 @@ async function main() {
     }
     canvas.addEventListener('click', onMouseClick)
     canvas.addEventListener('mousemove', onMousemove)
-
+    function resetLast_Click(curobj) {
+        if (flag) {
+            lastobj = curobj.object;
+            color = lastobj.material.color.getHex();
+            flag = false;
+        } else {
+            lastobj.material.color.setHex(color);
+        }
+        lastobj = curobj.object;
+        color = curobj.object.material.color.getHex();
+        curobj.object.material.color.setHex(0xffffff)
+    }
+    function resetLast_Move(curobj) {
+        if (flag2) {
+            lastobj2 = curobj.object;
+            color2 = lastobj2.material.color.getHex();
+            flag2 = false;
+        } else {
+            lastobj2.material.color.setHex(color2);
+            lastobj2 = curobj.object;
+            color2 = curobj.object.material.color.getHex();
+            curobj.object.material.color.setHex(0x919ca7)
+        }
+    }
 
 }
 
