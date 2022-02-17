@@ -1,5 +1,6 @@
 # three-svg-3Dmap
 Load svg file to 3D map
+[demo here](http://www.yiki.site/three-svg-3Dmap/index.html)
 
 ## Related Class
 All about THREE  
